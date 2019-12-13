@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	g "github.com/soniah/gosnmp"
 )
@@ -55,8 +56,20 @@ func (sw *SWConn) GetPorts() (map[string]string, error) {
 }
 
 func main() {
-	address := "10.228.225.202"
+	args := os.Args[1:]
+	nargs := len(args)
+	address := ""
 	community := "public"
+	if nargs == 0 || nargs > 2 {
+		fmt.Printf("Usage: ./portops <switch address> [community string]")
+		os.Exit(1)
+	} else if nargs == 1 {
+		address = args[0]
+	} else {
+		address = args[0]
+		community = args[1]
+	}
+	log.Printf("Connect to switch %s with community string %s\n", address, community)
 
 	sw, err := NewConn(address, community)
 	if err != nil {
@@ -64,12 +77,14 @@ func main() {
 	}
 	defer sw.SNMPConn.Conn.Close()
 
+	log.Println("Get switch sysname ...")
 	swname, err := sw.GetSysname()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Switch name: %s\n", swname)
 
+	log.Println("Get switch ports ...")
 	ports, err := sw.GetPorts()
 	if err != nil {
 		log.Fatal(err)
